@@ -29,6 +29,9 @@ Google Chrome: The Chrome extension is the primary interface, delivering an intu
 
 In Chrome Extension developer mode, add the `extensions` folder as unpacked.
 
+## Authors:
+Guneet Gill, Aniyah Bohnen, and Kaitlynn Chan
+
 ## docker
 
 build
