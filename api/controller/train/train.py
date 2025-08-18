@@ -11,7 +11,7 @@ def load_fixed_csv(path):
     df = pd.read_csv(path, header=None, names=['raw'])
     
     # Split 'raw' column into 'prompt' and 'label'
-    df[['prompt', 'label']] = df['raw'].str.split(',', n=1, expand=True)
+    df[['prompt', 'label']] = df['raw'].str.rsplit(',', n=1, expand=True)
     
     # Remove quotes and extra spaces
     df['prompt'] = df['prompt'].str.strip().str.replace('"', '')
@@ -28,37 +28,55 @@ complex_ = load_fixed_csv('../data/prompt_data_complex.csv')
 
 #combine both together
 joint_df = pd.concat([simple, complex_], ignore_index=True)
-#randomize the order 
+#shuffle the dataset
 joint_df = joint_df.sample(frac=1, random_state=42).reset_index(drop=True)
 
-#split training and test data
-# 20% size for testing 
-test_size = int(0.2 * len(joint_df))
+# Split into training and test sets (stratified to keep class proportions)
+train_df, test_df_ans_key = train_test_split(
+    joint_df,
+    test_size=0.2,
+    random_state=42,
+    stratify=joint_df['label']
+)
 
-# Test set WITH labels (answer key)
-test_df_ans_key = joint_df.iloc[:test_size].copy()
-print(test_df_ans_key.head())
-
-# Test set WITHOUT labels (just prompts)
+# Test set WITHOUT labels
 test_df = test_df_ans_key.drop(columns=['label']).copy()
+
+train_df = train_df.reset_index(drop=True)
+test_df_ans_key = test_df_ans_key.reset_index(drop=True)
+test_df = test_df_ans_key.drop(columns=['label']).copy().reset_index(drop=True)
+
+
+# Print first 5 rows to verify
+print("Train set:")
+print(train_df.head())
+print("\nTest set with labels:")
+print(test_df_ans_key.head())
+print("\nTest set without labels:")
 print(test_df.head())
 
-# Remaining training data
-train_df = joint_df.iloc[test_size:].copy()
 
+# Initialize TF-IDF vectorizer which converts text to numbers
+#TF (Term Frequency): how often a word appears in this document.
+#IDF (Inverse Document Frequency): downweights words that appear everywhere.
+vectorizer = TfidfVectorizer()
 
-# # 4. TF-IDF Vectorization
-# vectorizer = TfidfVectorizer()
-# X_train_tfidf = vectorizer.fit_transform(X_train)
-# X_test_tfidf = vectorizer.transform(X_test)
+# Fit the vectorizer on training prompts and transform them into vectors
+X_train = vectorizer.fit_transform(train_df['prompt'])
+# Target labels
+y_train = train_df['label']
 
-# # 5. Train Logistic Regression
-# model = LogisticRegression()
-# model.fit(X_train_tfidf, y_train)
+# Transform test prompts (without fitting again!)
+X_test = vectorizer.transform(test_df['prompt'])
 
-# # 6. Evaluate
-# y_pred = model.predict(X_test_tfidf)
-# print(classification_report(y_test, y_pred))
+#use logstic regression
+model = LogisticRegression(max_iter=1000)  # increase iterations if needed
+model.fit(X_train, y_train)
+
+#evalute the model 
+y_pred = model.predict(X_test)
+print(classification_report(test_df_ans_key['label'], y_pred))
+
 
 # # 7. Save model and vectorizer
 # joblib.dump(model, '../data/logreg_model.pkl')
