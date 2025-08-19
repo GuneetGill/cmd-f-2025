@@ -3,24 +3,22 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report
 from sklearn.svm import SVC
 from sklearn.naive_bayes import MultinomialNB
-import joblib
-import csv
+from sklearn.metrics import classification_report
 
-# Load the CSV file into a DataFrame
-simple = pd.read_csv('../data/prompt_data_simple.csv', header=None, names=["prompt", "label"])
-complex_ = pd.read_csv('../data/prompt_data_complex.csv', header=None, names=["prompt", "label"])
+# ----------------------------
+#  Load and prepare data
+# ----------------------------
+def load_and_prepare_data(simple_path, complex_path):
+    simple = pd.read_csv(simple_path, header=None, names=["prompt", "label"])
+    complex_ = pd.read_csv(complex_path, header=None, names=["prompt", "label"])
+    joint_df = pd.concat([simple, complex_], ignore_index=True).sample(frac=1, random_state=42).reset_index(drop=True)
+    return joint_df
 
+joint_df = load_and_prepare_data('../data/prompt_data_simple.csv', '../data/prompt_data_complex.csv')
 
-#combine both together
-joint_df = pd.concat([simple, complex_], ignore_index=True)
-#shuffle the dataset
-joint_df = joint_df.sample(frac=1, random_state=42).reset_index(drop=True)
-
-
-# Split into training and test sets (stratified to keep class proportions)
+# Split into training and test sets
 train_df, test_df_ans_key = train_test_split(
     joint_df,
     test_size=0.2,
@@ -28,112 +26,70 @@ train_df, test_df_ans_key = train_test_split(
     stratify=joint_df['label']
 )
 
-# Test set WITHOUT labels
-test_df = test_df_ans_key.drop(columns=['label']).copy()
-
-train_df = train_df.reset_index(drop=True)
-test_df_ans_key = test_df_ans_key.reset_index(drop=True)
-test_df = test_df_ans_key.drop(columns=['label']).copy().reset_index(drop=True)
-
-
-# Initialize TF-IDF vectorizer which converts text to numbers
-#TF (Term Frequency): how often a word appears in this document.
-#IDF (Inverse Document Frequency): downweights words that appear everywhere.
-vectorizer = TfidfVectorizer()
-
-# Fit the vectorizer on training prompts and transform them into vectors
-X_train = vectorizer.fit_transform(train_df['prompt'])
-# Target labels
+X_train_text = train_df['prompt']
 y_train = train_df['label']
+X_test_text = test_df_ans_key['prompt']
+y_test = test_df_ans_key['label']
 
-# Transform test prompts (without fitting again!)
-X_test = vectorizer.transform(test_df['prompt'])
+# ----------------------------
+#  TF-IDF Vectorization
+# ----------------------------
+vectorizer = TfidfVectorizer()
+X_train = vectorizer.fit_transform(X_train_text)
+X_test = vectorizer.transform(X_test_text)
 
+# ----------------------------
+# Model training & evaluation function
+# ----------------------------
+def train_and_evaluate(model, X_train, y_train, X_test, y_test, model_name="Model"):
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    print(f"=== {model_name} ===")
+    print(classification_report(y_test, y_pred))
+    return model
 
-# --- logstic regression classifier ---
-model_lr = LogisticRegression(max_iter=1000)  # increase iterations if needed
-model_lr.fit(X_train, y_train)
+# ----------------------------
+# Define models
+# ----------------------------
+models = {
+    "Logistic Regression": LogisticRegression(max_iter=1000),
+    "Random Forest": RandomForestClassifier(n_estimators=200, random_state=42),
+    "SVM": SVC(kernel='linear', random_state=42),
+    "Naive Bayes": MultinomialNB()
+}
 
-#evalute the model 
-y_pred_lr = model_lr.predict(X_test)
-print("logstic regression Report:")
-print(classification_report(test_df_ans_key['label'], y_pred_lr))
+# Train and evaluate all models
+trained_models = {}
+for name, model in models.items():
+    trained_models[name] = train_and_evaluate(model, X_train, y_train, X_test, y_test, name)
 
-
-# --- Random Forest classifier ---
-rf_model = RandomForestClassifier(n_estimators=200, random_state=42)
-rf_model.fit(X_train, y_train)
-
-#evalute the model 
-y_pred_rf = rf_model.predict(X_test)
-print("Random Forest Report:")
-print(classification_report(test_df_ans_key['label'], y_pred_rf))
-
-
-# --- Support Vector Machine (SVM) classifier ---
-svm_model = SVC(kernel='linear', random_state=42)  # linear kernel for text
-svm_model.fit(X_train, y_train)
-
-y_pred_svm = svm_model.predict(X_test)
-print("SVM Classification Report:")
-print(classification_report(test_df_ans_key['label'], y_pred_svm))
-
-
-# --- Multinomial Naive Bayes classifier ---
-nb_model = MultinomialNB()
-nb_model.fit(X_train, y_train)
-
-y_pred_nb = nb_model.predict(X_test)
-print("Naive Bayes Classification Report:")
-print(classification_report(test_df_ans_key['label'], y_pred_nb))
-
-
-
+# ----------------------------
+#  Predict new prompts
+# ----------------------------
 new_prompts = [
-    # Simple (easy Google-search-style queries)
-    "What is the capital of France?",                        # simple
-    "How many ounces are in a cup?",                          # simple
-    "Weather forecast for New York tomorrow",                 # simple
-    "Who won the 2024 Olympic 100m race?",                    # simple
-    "How to boil an egg?",                                    # simple
+    # Simple prompts
+    "What is the capital of France?",
+    "How many ounces are in a cup?",
+    "Weather forecast for New York tomorrow",
+    "Who won the 2024 Olympic 100m race?",
+    "How to boil an egg?",
+    "Thai food restaurent near me",
+    "Google office Vancouver",
 
-    # Complex (requires design, computation, or technical reasoning)
-    "Develop an algorithm for autonomous drone navigation",  # complex
-    "Explain the role of mitochondria in cellular metabolism using biochemistry terms", # complex
-    "Build a machine learning model to predict stock prices", # complex
-    "Design a protocol for secure multiparty computation",   # complex
-    "Create a simulation of climate change impacts on crop yield", # complex
+    # Complex prompts
+    "Develop an algorithm for autonomous drone navigation",
+    "Explain the role of mitochondria in cellular metabolism using biochemistry terms",
+    "Build a machine learning model to predict stock prices",
+    "Design a protocol for secure multiparty computation",
+    "Create a simulation of climate change impacts on crop yield",
+    "Code me a IOS app about different dog breeds",
+    "Help me write this email to my doctor"
 ]
 
-
-# Transform with the same vectorizer
 X_new = vectorizer.transform(new_prompts)
-preds = model_lr.predict(X_new)
 
-for prompt, label in zip(new_prompts, preds):
-    print(f"{prompt} → {label}")
-print("\n")
-
-# Transform with the same vectorizer
-X_new = vectorizer.transform(new_prompts)
-preds = rf_model.predict(X_new)
-
-for prompt, label in zip(new_prompts, preds):
-    print(f"{prompt} → {label}")
-print("\n")
-    
-# Transform with the same vectorizer
-X_new = vectorizer.transform(new_prompts)
-preds = svm_model.predict(X_new)
-
-for prompt, label in zip(new_prompts, preds):
-    print(f"{prompt} → {label}")
-print("\n")
-    
-# Transform with the same vectorizer
-X_new = vectorizer.transform(new_prompts)
-preds = nb_model.predict(X_new)
-
-for prompt, label in zip(new_prompts, preds):
-    print(f"{prompt} → {label}")
-print("\n")
+for name, model in trained_models.items():
+    preds = model.predict(X_new)
+    print(f"\n{name} predictions on new prompts:")
+    for prompt, label in zip(new_prompts, preds):
+        print(f"{prompt} → {label}")
