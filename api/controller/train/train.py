@@ -4,32 +4,24 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 import joblib
+import csv
 
-# Function to load CSV and fix quotes
-def load_fixed_csv(path):
-    # Read everything as a single column
-    df = pd.read_csv(path, header=None, names=['raw'])
-    
-    # Split 'raw' column into 'prompt' and 'label'
-    df[['prompt', 'label']] = df['raw'].str.rsplit(',', n=1, expand=True)
-    
-    # Remove quotes and extra spaces
-    df['prompt'] = df['prompt'].str.strip().str.replace('"', '')
-    df['label'] = df['label'].str.strip().str.replace('"', '')
-    
-    # Drop the raw column
-    df = df.drop(columns=['raw'])
-    
-    return df
+# Load the CSV file into a DataFrame
+simple = pd.read_csv('../data/prompt_data_simple.csv', header=None, names=["prompt", "label"])
+complex_ = pd.read_csv('../data/prompt_data_complex.csv', header=None, names=["prompt", "label"])
 
-# Load both datasets into panda dataframe 
-simple = load_fixed_csv('../data/prompt_data_simple.csv')
-complex_ = load_fixed_csv('../data/prompt_data_complex.csv')
+print("simple set:")
+print(simple.head())
+print("complex set:")
+print(complex_.head())
 
 #combine both together
 joint_df = pd.concat([simple, complex_], ignore_index=True)
 #shuffle the dataset
 joint_df = joint_df.sample(frac=1, random_state=42).reset_index(drop=True)
+
+print("joint:")
+print(joint_df.head())
 
 # Split into training and test sets (stratified to keep class proportions)
 train_df, test_df_ans_key = train_test_split(
@@ -78,6 +70,31 @@ y_pred = model.predict(X_test)
 print(classification_report(test_df_ans_key['label'], y_pred))
 
 
-# # 7. Save model and vectorizer
-# joblib.dump(model, '../data/logreg_model.pkl')
-# joblib.dump(vectorizer, '../data/tfidf_vectorizer.pkl')
+# 7. Save model and vectorizer
+joblib.dump(model, '../data/logreg_model.pkl')
+joblib.dump(vectorizer, '../data/tfidf_vectorizer.pkl')
+
+
+# new_prompts = [
+#     # Simple (easy Google-search-style queries)
+#     "What is the capital of France?",                        # simple
+#     "How many ounces are in a cup?",                          # simple
+#     "Weather forecast for New York tomorrow",                 # simple
+#     "Who won the 2024 Olympic 100m race?",                    # simple
+#     "How to boil an egg?",                                    # simple
+
+#     # Complex (requires design, computation, or technical reasoning)
+#     "Develop an algorithm for autonomous drone navigation",  # complex
+#     "Explain the role of mitochondria in cellular metabolism using biochemistry terms", # complex
+#     "Build a machine learning model to predict stock prices", # complex
+#     "Design a protocol for secure multiparty computation",   # complex
+#     "Create a simulation of climate change impacts on crop yield", # complex
+# ]
+
+
+# # Transform with the same vectorizer
+# X_new = vectorizer.transform(new_prompts)
+# preds = model.predict(X_new)
+
+# for prompt, label in zip(new_prompts, preds):
+#     print(f"{prompt} → {label}")
