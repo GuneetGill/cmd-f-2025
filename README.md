@@ -18,7 +18,7 @@ GraphQL: The API is built with GraphQL, enabling flexible and efficient data ret
 
 Docker: Utilized for containerizing the application, ensuring portability and seamless deployment across different environments.
 
-Gemini AI: Leverages AI to assess user prompts, determining whether the request warrants ChatGPT’s assistance or if a simple Google search will suffice.
+ML model: Trained and tested four different ML models, Logistic Regression, Random Forest, SVM, and Naive Bayes—on our dataset, and ultimately selected the best-performing SVM as our custom solution for classifying prompts.
 
 Render: Hosts and deploys the API to the cloud, providing reliable infrastructure and scaling.
 Flask: A minimalistic Python web framework that powers the backend API and handles server-side requests.
