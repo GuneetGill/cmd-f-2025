@@ -1,40 +1,38 @@
-import os
-import google.generativeai as genai
-from dotenv import load_dotenv
+import joblib
+import os 
+import urllib.parse  # for safe URL encoding
+import json
 
-# Load environment variables from the .env file
-load_dotenv()
 
-# Retrieve the Gemini API key from environment variables
-api_key = os.getenv('GEMINI_API_KEY')
+# Paths to the saved models in the train/ folder
+TRAIN_DIR = "train"
+VECTORIZER_PATH = os.path.join(TRAIN_DIR, "tfidf_vectorizer.pkl")
+SVM_PATH = os.path.join(TRAIN_DIR, "svm_model.pkl")
+LR_PATH = os.path.join(TRAIN_DIR, "logistic_regression_model.pkl")
+RF_PATH = os.path.join(TRAIN_DIR, "random_forest_model.pkl")
+NB_PATH = os.path.join(TRAIN_DIR, "naive_bayes_model.pkl")
 
-# Configure the API with the loaded API key
-genai.configure(api_key=api_key)
+# Load vectorizer
+vectorizer = joblib.load(VECTORIZER_PATH)
 
-# Use the Gemini 2.0 Flash model
-model = genai.GenerativeModel('models/gemini-2.0-flash')  
+# Load models
+svm_model = joblib.load(SVM_PATH)
+lr_model = joblib.load(LR_PATH)
+rf_model = joblib.load(RF_PATH)
+nb_model = joblib.load(NB_PATH)
 
-def analyze_prompt_complexity(prompt_text):
+def analyze_prompt_complexity(prompt, model=svm_model):
     """
-    Analyzes if a prompt is simple (better for Google) or complex (better for ChatGPT)
-    Returns: dictionary with classification and confidence
+    SVM-based prompt complexity analyzer compatible with version 1 return type.
+    Returns a JSON string.
     """
-    system_prompt = """
-    You are a prompt complexity analyzer. Determine if the provided query is:
-    1. SIMPLE: Better suited for a Google search (factual, direct questions, simple lookups)
-    2. COMPLEX: Better suited for ChatGPT (requires reasoning, creativity, opinions, multi-step thinking)
+    X_new = vectorizer.transform([prompt])
+    prediction = model.predict(X_new)[0].upper()  # SIMPLE or COMPLEX
 
-    Respond with a JSON object with:
-    - "classification": either "SIMPLE" or "COMPLEX"
-    If the classification is "SIMPLE", also include the following field:
-    - "google_search_url": a URL for performing a Google search for the query (e.g., "https://www.google.com/search?q=query_text")
-    """
-    
-    # Generate content with the system prompt and the user's query
-    response = model.generate_content(
-        f"{system_prompt}\n\nAnalyze this query: '{prompt_text}'",
-        generation_config={"temperature": 0.1}
-    )
-    
-    # Return the generated response text
-    return response.text
+    if prediction == "SIMPLE":
+        result = {"classification": prediction, "google_search_url": ""}
+    else:
+        query = urllib.parse.quote(prompt)
+        result = {"classification": prediction, "google_search_url": f"https://www.google.com/search?q={query}"}
+
+    return json.dumps(result)
