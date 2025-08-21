@@ -3,9 +3,12 @@ import os
 import urllib.parse  # for safe URL encoding
 import json
 
+# Get the directory where this file lives
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # this is controller/
 
-# Paths to the saved models in the train/ folder
-TRAIN_DIR = "train"
+# Path to the folder containing the pickles (relative to api/)
+TRAIN_DIR = os.path.join(BASE_DIR, "train")
+
 VECTORIZER_PATH = os.path.join(TRAIN_DIR, "tfidf_vectorizer.pkl")
 SVM_PATH = os.path.join(TRAIN_DIR, "svm_model.pkl")
 LR_PATH = os.path.join(TRAIN_DIR, "logistic_regression_model.pkl")
