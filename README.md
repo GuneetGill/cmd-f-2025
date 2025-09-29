@@ -2,12 +2,6 @@
 
 This Chrome extension is designed to reduce ChatGPT usage by promoting awareness of the environmental impact associated with AI models. The extension aims to help users make more conscious decisions about using AI-powered tools and reduce unnecessary usage, contributing to lowering the carbon footprint of these services.
 
-<img src="https://github.com/user-attachments/assets/03cdd238-5986-4f45-ab52-5067e1879796" width="300" height = "600"  />
-<img src="https://github.com/user-attachments/assets/3d8c1859-0960-4d17-98b3-54f91bcb698f" width="300" height = "500"/>
-<img src="https://github.com/user-attachments/assets/628076e3-500e-4184-905e-ce3758075e14" width="300" height = "500" />
-
-
-
 ## Features
 **Usage Tracker**: Tracks the time spent interacting with ChatGPT and displays a usage summary.
 
@@ -38,10 +32,10 @@ In Chrome Extension developer mode, add the `extensions` folder as unpacked.
 ## Authors:
 Guneet Gill, Aniyah Bohnen, and Kaitlynn Chan
 
-## docker
-
-build
-`docker build -t flask-api .`
-
-run
-`docker run -p 5000:5000 flask-api`
+<table>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/03cdd238-5986-4f45-ab52-5067e1879796" width="200"/></td>
+    <td><img src="https://github.com/user-attachments/assets/3d8c1859-0960-4d17-98b3-54f91bcb698f" width="200"/></td>
+    <td><img src="https://github.com/user-attachments/assets/628076e3-500e-4184-905e-ce3758075e14" width="200"/></td>
+  </tr>
+</table>
