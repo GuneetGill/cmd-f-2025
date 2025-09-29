@@ -2,9 +2,9 @@
 
 This Chrome extension is designed to reduce ChatGPT usage by promoting awareness of the environmental impact associated with AI models. The extension aims to help users make more conscious decisions about using AI-powered tools and reduce unnecessary usage, contributing to lowering the carbon footprint of these services.
 
-<img src="https://github.com/user-attachments/assets/03cdd238-5986-4f45-ab52-5067e1879796" width="300" />
-<img src="https://github.com/user-attachments/assets/3d8c1859-0960-4d17-98b3-54f91bcb698f" width="300" />
-<img src="https://github.com/user-attachments/assets/628076e3-500e-4184-905e-ce3758075e14" width="300" />
+<img src="https://github.com/user-attachments/assets/03cdd238-5986-4f45-ab52-5067e1879796" width="300" height = "600"  />
+<img src="https://github.com/user-attachments/assets/3d8c1859-0960-4d17-98b3-54f91bcb698f" width="300" height = "500"/>
+<img src="https://github.com/user-attachments/assets/628076e3-500e-4184-905e-ce3758075e14" width="300" height = "500" />
 
 
 
